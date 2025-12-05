@@ -103,7 +103,7 @@ class OpenVLAServer:
             # Convert JSON-native lists back into ndarrays if needed.
             if not isinstance(image, np.ndarray):
                 image = np.asarray(image, dtype=np.uint8)
-            unnorm_key = payload.get("unnorm_key", None)
+            unnorm_key = payload.get("unnorm_key", "bridge_orig")
 
             # Run VLA Inference
             prompt = get_openvla_prompt(instruction, self.openvla_path)
@@ -132,7 +132,7 @@ class OpenVLAServer:
 @dataclass
 class DeployConfig:
     # fmt: off
-    openvla_path: Union[str, Path] = "/state/partition/aox/openvla-7b"              # HF Hub Path (or path to local run directory)
+    openvla_path: Union[str, Path] = "/home/agilex/xuao/model/openvla-7b"              # HF Hub Path (or path to local run directory)
 
     # Server Configuration
     host: str = "127.0.1.1"                                                         # Host IP Address

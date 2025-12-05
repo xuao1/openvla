@@ -34,10 +34,12 @@ from openpi_client import websocket_client_policy, image_tools
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
-from transformers import AutoModelForVision2Seq, AutoProcessor
 from PIL import Image as PILImage
 import requests
 import json
+import json_numpy
+
+json_numpy.patch()
 
 task_config = {'camera_names': ['cam_high', 'cam_left_wrist', 'cam_right_wrist']}
 
@@ -53,7 +55,7 @@ class OpenVLA:
     def predict_action(self, payload: Dict[str, Any]) -> str:
         # Parse payload components
         image, instruction = payload["image"], payload["instruction"]
-        unnorm_key = payload.get("unnorm_key", None)
+        unnorm_key = payload.get("unnorm_key", "bridge_orig")
 
         # Run VLA Inference
         response = requests.post(
@@ -62,7 +64,7 @@ class OpenVLA:
         )
 
         if response.status_code == 200:
-            action = response.json().get("action", None)
+            action = response.json()
             return action
         else:
             print(f"Request failed with status code: {response.status_code}")
@@ -154,7 +156,8 @@ def inference_process(args, ros_operator, t, openvla_model):
         # img_left = image_tools.resize_with_pad(img_left, args.img_size, args.img_size)
         # img_right = image_tools.resize_with_pad(img_right, args.img_size, args.img_size)
         # print(f"✅ after img_front shape: {img_front.shape}")
-        img_front = np.transpose(img_front, (2, 0, 1)).astype(np.uint8)
+        # img_front = np.transpose(img_front, (2, 0, 1)).astype(np.uint8)
+        img_front = img_front.astype(np.uint8)
         # img_left = np.transpose(img_left, (2, 0, 1)).astype(np.uint8)
         # img_right = np.transpose(img_right, (2, 0, 1)).astype(np.uint8)
         # print(f"✅ after img_front shape: {img_front.shape}")
@@ -188,7 +191,7 @@ def inference_process(args, ros_operator, t, openvla_model):
         action_chunk = action_chunk_ori.copy()
         # print("right_gripper", action_chunk[:, 13])
         # print("left_gripper", action_chunk[:, 6])
-        action_chunk[:, 6] -= 0.004
+        # action_chunk[:, 6] -= 0.004
         # action_chunk[:, 13] -= 0.004
         # action_chunk[:, 6] = np.where(action_chunk[:, 6] > 0.02, action_chunk[:, 6], 0.001)
         # action_chunk[:, 13] = np.where(action_chunk[:, 13] > 0.02, action_chunk[:,13], 0.0001)
