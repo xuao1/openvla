@@ -275,8 +275,8 @@ def model_inference(args, ros_operator, save_episode=True):
                 # Execute the interpolated actions one by one
                 # print(f"✅ interp_actions: {interp_actions}")
                 for act in interp_actions:
-                    left_action = act[:7]
-                    right_action = right1
+                    left_action = left1
+                    right_action = act[:7]
                     # for debug here
                     print("left_action", left_action)
                     print("right_action", right_action)
