@@ -177,7 +177,7 @@ def inference_process(args, ros_operator, t, openvla_model):
         #     ).tolist()
 
         payload = {
-            "image": img_front,
+            "image": img_front.tolist(),
             "instruction": args.task_instruction,
         }
             

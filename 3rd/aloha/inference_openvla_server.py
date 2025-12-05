@@ -40,6 +40,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
+import numpy as np
+
 import draccus
 import torch
 import uvicorn
@@ -97,6 +99,10 @@ class OpenVLAServer:
 
             # Parse payload components
             image, instruction = payload["image"], payload["instruction"]
+
+            # Convert JSON-native lists back into ndarrays if needed.
+            if not isinstance(image, np.ndarray):
+                image = np.asarray(image, dtype=np.uint8)
             unnorm_key = payload.get("unnorm_key", None)
 
             # Run VLA Inference
