@@ -320,10 +320,7 @@ class TrainingStrategy(ABC):
                 #   2) Compute boolean "mask" where "labels > 2" (where 2 is ID for `EOS_TOKEN`)
                 #           => If masking out EOS, then it's just "labels != -100 (IGNORE_INDEX)
                 #   3) Compute masked accuracy as `(preds == logits) & mask` --> sum/divide by # unmasked!
-                # ================ For only one camera view (e.g., "primary") ================
-                # action_preds = output.logits[:, self.vlm.vision_backbone.num_patches : -1].argmax(dim=2)
-                # =============== For multi-camera views (e.g., "primary" + "wrist"), we concatenate them along width dimension ===============
-                action_preds = output.logits[:, self.vlm.vision_backbone.num_patches * 2 : -1].argmax(dim=2)
+                action_preds = output.logits[:, self.vlm.vision_backbone.num_patches : -1].argmax(dim=2)
                 action_gt = batch["labels"][:, 1:].to(action_preds.device)
                 mask = action_gt > action_tokenizer.action_token_begin_idx
 
