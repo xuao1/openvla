@@ -141,9 +141,30 @@ class DinoSigLIPViTBackbone(VisionBackbone):
 
     def forward(self, pixel_values: Dict[str, torch.Tensor]) -> torch.Tensor:
         """Runs the transformed image/pixel tensors through each vision backbone, returning concatenated patches."""
-        dino_patches = self.dino_featurizer(pixel_values["dino"])
-        siglip_patches = self.siglip_featurizer(pixel_values["siglip"])
+        # ================ For only one camera view (e.g., "primary") ================
+        # dino_patches = self.dino_featurizer(pixel_values["dino"])
+        # siglip_patches = self.siglip_featurizer(pixel_values["siglip"])
 
+        # =============== For multi-camera views (e.g., "primary" + "wrist"), we concatenate them along width dimension ===============
+        dino_in = pixel_values["dino"]
+        siglip_in = pixel_values["siglip"]
+
+        if dino_in.ndim == 5:
+            b, n, c, h, w = dino_in.shape
+            dino_in = dino_in.view(b * n, c, h, w)
+            siglip_in = siglip_in.view(b * n, c, h, w)
+
+            dino_patches = self.dino_featurizer(dino_in)
+            siglip_patches = self.siglip_featurizer(siglip_in)
+
+            # Unflatten & Merge Sequence: [B * N, P, D] -> [B, N * P, D]
+            dino_patches = dino_patches.reshape(b, n * dino_patches.shape[1], -1)
+            siglip_patches = siglip_patches.reshape(b, n * siglip_patches.shape[1], -1)
+        else:
+            # For single view inputs
+            dino_patches = self.dino_featurizer(dino_in)
+            siglip_patches = self.siglip_featurizer(siglip_in)
+        
         return torch.cat([dino_patches, siglip_patches], dim=2)
 
     @property

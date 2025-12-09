@@ -294,6 +294,15 @@ class TrainingStrategy(ABC):
                         pixel_values=batch["pixel_values"],
                         labels=batch["labels"],
                     )
+                    # Only the rank 0 print
+                    # if overwatch.is_rank_zero():
+                    #     decoded_text = self.vlm.llm_backbone.tokenizer.batch_decode(batch["input_ids"], skip_special_tokens=True)
+                    #     print("DEBUG: Decoded Texts: ", decoded_text)
+                    #     if isinstance(batch['pixel_values'], dict):
+                    #         print(f"DEBUG: Keys inside pixel_values: {batch['pixel_values'].keys()}")
+                    #         for k, v in batch['pixel_values'].items():
+                    #             if hasattr(v, "shape"):
+                    #                 print(f"DEBUG: Shape of '{k}': {v.shape}")
                     loss = output.loss
 
                 # Commit Loss =>> Backward!
@@ -311,7 +320,10 @@ class TrainingStrategy(ABC):
                 #   2) Compute boolean "mask" where "labels > 2" (where 2 is ID for `EOS_TOKEN`)
                 #           => If masking out EOS, then it's just "labels != -100 (IGNORE_INDEX)
                 #   3) Compute masked accuracy as `(preds == logits) & mask` --> sum/divide by # unmasked!
-                action_preds = output.logits[:, self.vlm.vision_backbone.num_patches : -1].argmax(dim=2)
+                # ================ For only one camera view (e.g., "primary") ================
+                # action_preds = output.logits[:, self.vlm.vision_backbone.num_patches : -1].argmax(dim=2)
+                # =============== For multi-camera views (e.g., "primary" + "wrist"), we concatenate them along width dimension ===============
+                action_preds = output.logits[:, self.vlm.vision_backbone.num_patches * 2 : -1].argmax(dim=2)
                 action_gt = batch["labels"][:, 1:].to(action_preds.device)
                 mask = action_gt > action_tokenizer.action_token_begin_idx
 

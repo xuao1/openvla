@@ -38,7 +38,13 @@ class RLDSBatchTransform:
     def __call__(self, rlds_batch: Dict[str, Any]) -> Dict[str, Any]:
         """Converts a RLDS batch to the format expected by the OpenVLA collator/models."""
         dataset_name, action = rlds_batch["dataset_name"], rlds_batch["action"][0]
-        img = Image.fromarray(rlds_batch["observation"]["image_primary"][0])
+        # ================ For only one camera view (e.g., "primary") ================
+        # img = Image.fromarray(rlds_batch["observation"]["image_primary"][0])
+        # ================ For multi-camera views (e.g., "primary" + "wrist"), we concatenate them along width dimension ===============
+        img_primary = Image.fromarray(rlds_batch["observation"]["image_primary"][0])
+        img_wrist = Image.fromarray(rlds_batch["observation"]["image_wrist"][0])
+        imgs = [img_primary, img_wrist]
+
         lang = rlds_batch["task"]["language_instruction"].decode().lower()
 
         # Construct Chat-based Prompt =>> Input is default query + language instruction, output are the action tokens
@@ -57,7 +63,17 @@ class RLDSBatchTransform:
         # Tensorize =>> Run Image Transform to get `pixel_values` =>> Return
         #   =>> IMPORTANT :: IF WE'RE USING HF LLM.forward(..., labels=labels), SHIFTING HAPPENS _INSIDE_ MODEL!
         input_ids, labels = torch.tensor(input_ids), torch.tensor(labels)
-        pixel_values = self.image_transform(img)
+        # ================ For only one camera view (e.g., "primary") ================
+        # pixel_values = self.image_transform(img)
+        # ================ For multi-camera views (e.g., "primary" + "wrist"), we concatenate them along width dimension ===============
+        processed_imgs = [self.image_transform(img) for img in imgs]
+        if isinstance(processed_imgs[0], dict):
+            pixel_values = {
+                k: torch.stack([p[k] for p in processed_imgs]) 
+                for k in processed_imgs[0].keys()
+            }
+        else:
+            pixel_values = torch.stack(processed_imgs)
 
         # [CRITICAL] We do not want to take the loss for anything but the predicted action tokens!
         labels[: -(len(action) + 1)] = IGNORE_INDEX
@@ -92,7 +108,10 @@ class RLDSDataset(IterableDataset):
         per_dataset_kwargs, weights = get_oxe_dataset_kwargs_and_weights(
             self.data_root_dir,
             mixture_spec,
-            load_camera_views=("primary",),
+            # ================ For only one camera view (e.g., "primary") ================
+            # load_camera_views=("primary",),
+            # ================ For multi-camera views (e.g., "primary" + "wrist"), we concatenate them along width dimension ===============
+            load_camera_views=("primary", "wrist"),
             load_depth=False,
             load_proprio=False,
             load_language=True,
