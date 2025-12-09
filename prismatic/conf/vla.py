@@ -138,6 +138,64 @@ class Exp_DinoSigLIP_224px_OXE_Magic_Soup_Plus(Exp_SigLIP_224px_Bridge):
 
 # === OpenVLA Fine-tuning Configurations ===
 
+# = [8 GPU] DINO-SigLIP 224px + ALOHA Custom Full Finetune =
+@dataclass
+class Exp_Aloha_FullFT(Exp_DinoSigLIP_224px_Bridge):
+    # 你的自定义 VLA ID，启动训练命令时要用这个名字
+    vla_id: str = "aloha-7b-full-ft"
+    
+    # 继承 OpenVLA 的基础架构 (DinoSigLIP)
+    base_vlm: Union[str, Path] = "prism-dinosiglip-224px+7b"
+
+    # ★ 关键：这里必须对应 mixtures.py 里定义的 mixture 名字
+    data_mix: str = "aloha2openvla_multi_rgb"
+
+    # 全量微调设置 (不冻结)
+    freeze_vision_backbone: bool = False
+    freeze_llm_backbone: bool = False
+    unfreeze_last_llm_layer: bool = False 
+
+    # 优化参数 (Full FT 通常比 LoRA 需要更小的 LR)
+    learning_rate: float = 2e-5
+    lr_scheduler_type: str = "constant" # 或者 "linear-warmup+cosine-decay"
+    warmup_ratio: float = 0.03
+    
+    # 显存与 Batch Size 设置
+    # 假设你有 8 张 A100 (80G)。如果显存不足，减小 per_device_batch_size
+    expected_world_size: int = 4
+    per_device_batch_size: int = 4   # 单卡 batch size
+    global_batch_size: int = 16  
+    
+    # 图像增强
+    image_aug: bool = False
+
+    epochs: int = 100
+
+@dataclass
+class Exp_Aloha_FullFT_FlipUpright(Exp_Aloha_FullFT):
+    vla_id: str = "aloha-7b-full-ft-flip-upright"
+    data_mix: str = "aloha2openvla_multi_rgb_flip_upright"
+
+@dataclass
+class Exp_Aloha_FullFT_Lift(Exp_Aloha_FullFT):
+    vla_id: str = "aloha-7b-full-ft-lift"
+    data_mix: str = "aloha2openvla_multi_rgb_lift"
+
+@dataclass
+class Exp_Aloha_FullFT_MoveNear(Exp_Aloha_FullFT):
+    vla_id: str = "aloha-7b-full-ft-move-near"
+    data_mix: str = "aloha2openvla_multi_rgb_move_near"
+
+@dataclass
+class Exp_Aloha_FullFT_PutIntoPot(Exp_Aloha_FullFT):
+    vla_id: str = "aloha-7b-full-ft-put-into-pot"
+    data_mix: str = "aloha2openvla_multi_rgb_put_into_pot"
+
+@dataclass
+class Exp_Aloha_FullFT_PutOnPlate(Exp_Aloha_FullFT):
+    vla_id: str = "aloha-7b-full-ft-put-on-plate"
+    data_mix: str = "aloha2openvla_multi_rgb_put_on_plate"
+
 
 # = [8 GPU] SigLIP 224px + T-DROID =
 @dataclass
@@ -224,6 +282,14 @@ class VLARegistry(Enum):
 
     # === DROID Fine-tuning Configs ===
     SIGLIP_224PX_MX_DROID_WIPE = Exp_SigLIP_224px_Droid_Wipe
+
+    # === ALOHA Full Fine-tuning Config ===
+    ALOHA_7B_FULL_FT = Exp_Aloha_FullFT
+    ALOHA_7B_FULL_FT_FLIP_UPRIGHT = Exp_Aloha_FullFT_FlipUpright
+    ALOHA_7B_FULL_FT_LIFT = Exp_Aloha_FullFT_Lift
+    ALOHA_7B_FULL_FT_MOVE_NEAR = Exp_Aloha_FullFT_MoveNear
+    ALOHA_7B_FULL_FT_PUT_INTO_POT = Exp_Aloha_FullFT_PutIntoPot
+    ALOHA_7B_FULL_FT_PUT_ON_PLATE = Exp_Aloha_FullFT_PutOnPlate
 
     @property
     def vla_id(self) -> str:

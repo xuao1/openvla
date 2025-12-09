@@ -840,6 +840,22 @@ def libero_dataset_transform(trajectory: Dict[str, Any]) -> Dict[str, Any]:
     trajectory["observation"]["gripper_state"] = trajectory["observation"]["state"][:, -2:]  # 2D gripper state
     return trajectory
 
+def aloha_dataset_transform(trajectory: Dict[str, Any]) -> Dict[str, Any]:
+    # 1. 类型转换：确保 action 和 state 是 float32
+    # 虽然 TFDS 里可能是 float32，但在 TF 数据流中有时会变成 float64 或其他类型，这里强制转换最安全
+    # trajectory["action"] = tf.cast(trajectory["action"], tf.float32)
+    # trajectory["observation"]["state"] = tf.cast(trajectory["observation"]["state"], tf.float32)
+    # trajectory["observation"]["proprio"] = trajectory["observation"]["state"]
+
+    # 2. 如果你的 TFDS 里存储的是 encoded string (JPEG bytes)，
+    # 并且你在 configs.py 里没有让 loader 自动解码，你可能需要在这里解码。
+    # 但 OpenVLA 的标准流程通常会自动处理 "image" 类型的解码。
+    # 如果训练报错说 tensor 类型不对 (uint8 vs float)，可以在这里加 tf.io.decode_image
+    
+    # 3. 如果你想让 "state" 统一叫 "proprio" (OpenVLA 的习惯叫法)，可以做个映射，
+    # 但因为我们在 configs.py 里已经配置了 "state_obs_keys": ["state"]，所以这里不改也没关系。
+    
+    return trajectory
 
 # === Registry ===
 OXE_STANDARDIZATION_TRANSFORMS = {
@@ -919,4 +935,11 @@ OXE_STANDARDIZATION_TRANSFORMS = {
     "libero_object_no_noops": libero_dataset_transform,
     "libero_goal_no_noops": libero_dataset_transform,
     "libero_10_no_noops": libero_dataset_transform,
+    ### ALOHA dataset
+    "aloha2openvla_multi_rgb": aloha_dataset_transform,
+    "aloha2openvla_multi_rgb_flip_upright": aloha_dataset_transform,
+    "aloha2openvla_multi_rgb_lift": aloha_dataset_transform,
+    "aloha2openvla_multi_rgb_move_near": aloha_dataset_transform,
+    "aloha2openvla_multi_rgb_put_into_pot": aloha_dataset_transform,
+    "aloha2openvla_multi_rgb_put_on_plate": aloha_dataset_transform,
 }

@@ -670,4 +670,119 @@ OXE_DATASET_CONFIGS = {
         "state_encoding": StateEncoding.POS_EULER,
         "action_encoding": ActionEncoding.EEF_POS,
     },
+    # xuao
+    "aloha2openvla_multi_rgb": {
+        # === 1. 图像映射 ===
+        "image_obs_keys": {
+            "primary": "image",       # 主相机
+            "secondary": None,
+            "wrist": "wrist_image",   # 手腕相机
+        },
+        "depth_obs_keys": {
+            "primary": None, "secondary": None, "wrist": None
+        },
+
+        # === 2. 状态映射 ===
+        "state_obs_keys": ["state"],
+
+        # === 3. 物理含义编码 ===
+        "state_encoding": StateEncoding.JOINT,
+        "action_encoding": ActionEncoding.JOINT_POS, 
+    },
+    # flip_upright
+    "aloha2openvla_multi_rgb_flip_upright": {
+        # === 1. 图像映射 ===
+        "image_obs_keys": {
+            "primary": "image",       # 主相机
+            "secondary": None,
+            "wrist": "wrist_image",   # 手腕相机
+        },
+        "depth_obs_keys": {
+            "primary": None, "secondary": None, "wrist": None
+        },
+
+        # === 2. 状态映射 ===
+        "state_obs_keys": ["state"],
+
+        # === 3. 物理含义编码 ===
+        "state_encoding": StateEncoding.JOINT,
+        "action_encoding": ActionEncoding.JOINT_POS, 
+    },
+    # lift
+    "aloha2openvla_multi_rgb_lift": {
+        # === 1. 图像映射 ===
+        "image_obs_keys": {
+            "primary": "image",       # 主相机
+            "secondary": None,
+            "wrist": "wrist_image",   # 手腕相机
+        },
+        "depth_obs_keys": {
+            "primary": None, "secondary": None, "wrist": None
+        },
+
+        # === 2. 状态映射 ===
+        "state_obs_keys": ["state"],
+
+        # === 3. 物理含义编码 ===
+        "state_encoding": StateEncoding.JOINT,
+        "action_encoding": ActionEncoding.JOINT_POS, 
+    },
+    # move_near
+    "aloha2openvla_multi_rgb_move_near": {
+        # === 1. 图像映射 ===
+        "image_obs_keys": {
+            "primary": "image",       # 主相机
+            "secondary": None,
+            "wrist": "wrist_image",   # 手腕相机
+        },
+        "depth_obs_keys": {
+            "primary": None, "secondary": None, "wrist": None
+        },
+
+        # === 2. 状态映射 ===
+        "state_obs_keys": ["state"],
+
+        # === 3. 物理含义编码 ===
+        "state_encoding": StateEncoding.JOINT,
+        "action_encoding": ActionEncoding.JOINT_POS, 
+    },
+    # put_into_pot
+    "aloha2openvla_multi_rgb_put_into_pot": {
+        # === 1. 图像映射 ===
+        "image_obs_keys": {
+            "primary": "image",       # 主相机
+            "secondary": None,
+            "wrist": "wrist_image",   # 手腕相机
+        },
+        "depth_obs_keys": {
+            "primary": None, "secondary": None, "wrist": None
+        },
+
+        # === 2. 状态映射 ===
+        "state_obs_keys": ["state"],
+
+        # === 3. 物理含义编码 ===
+        "state_encoding": StateEncoding.JOINT,
+        "action_encoding": ActionEncoding.JOINT_POS, 
+    },
+    # put_on_plate
+    "aloha2openvla_multi_rgb_put_on_plate": {
+        # === 1. 图像映射 ===
+        "image_obs_keys": {
+            "primary": "image",       # 主相机
+            "secondary": None,
+            "wrist": "wrist_image",   # 手腕相机
+        },
+        "depth_obs_keys": {
+            "primary": None, "secondary": None, "wrist": None
+        },
+
+        # === 2. 状态映射 ===
+        "state_obs_keys": ["state"],
+
+        # === 3. 物理含义编码 ===
+        "state_encoding": StateEncoding.JOINT,
+        "action_encoding": ActionEncoding.JOINT_POS,
+    },
+
 }

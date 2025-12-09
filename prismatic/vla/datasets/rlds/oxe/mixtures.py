@@ -206,5 +206,33 @@ OXE_NAMED_MIXTURES: Dict[str, List[Tuple[str, float]]] = {
     "libero_10_no_noops": [
         ("libero_10_no_noops", 1.0),
     ],
+
+    # === ALOHA Dataset ===
+    "aloha2openvla_multi_rgb": [
+        (
+            "aloha2openvla_multi_rgb", # 数据集名字 (必须和 TFDS 文件夹名一致)
+            1.0,                       # 采样权重 (全量微调单数据集设为 1.0)
+        ),
+    ],
+    # flip_upright 任务
+    "aloha2openvla_multi_rgb_flip_upright": [
+        ("aloha2openvla_multi_rgb_flip_upright", 1.0),
+    ],
+    # lift 任务
+    "aloha2openvla_multi_rgb_lift": [
+        ("aloha2openvla_multi_rgb_lift", 1.0),
+    ],
+    # move_near 任务
+    "aloha2openvla_multi_rgb_move_near": [
+        ("aloha2openvla_multi_rgb_move_near", 1.0),
+    ],
+    # put_into_pot 任务
+    "aloha2openvla_multi_rgb_put_into_pot": [
+        ("aloha2openvla_multi_rgb_put_into_pot", 1.0),
+    ],
+    # put_on_plate 任务
+    "aloha2openvla_multi_rgb_put_on_plate": [
+        ("aloha2openvla_multi_rgb_put_on_plate", 1.0),
+    ],
 }
 # fmt: on

@@ -117,6 +117,9 @@ class HFCausalLLMBackbone(LLMBackbone, ABC):
 
         # Initialize LLM (downloading from HF Hub if necessary) --> `llm_cls` is the actual {Model}ForCausalLM class!
         #   => Note: We're eschewing use of the AutoModel API so that we can be more explicit about LLM-specific details
+        if llm_family == "llama2":
+            # use local LLaMa-2 weights
+            hf_hub_path = "/home/aox/model/Llama-2-7b-hf"
         if not self.inference_mode:
             overwatch.info(f"Loading [bold]{llm_family}[/] LLM from [underline]`{hf_hub_path}`[/]", ctx_level=1)
             self.llm = llm_cls.from_pretrained(
