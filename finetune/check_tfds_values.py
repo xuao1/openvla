@@ -3,7 +3,7 @@ import numpy as np
 import tensorflow as tf
 
 # 指向你的数据根目录
-DATA_DIR = '/root/' 
+DATA_DIR = '/home/aox/model/aloha_rlds/' 
 DATASET_NAME = 'aloha2openvla_multi_rgb'
 
 print(f"Checking dataset: {DATASET_NAME} in {DATA_DIR}")

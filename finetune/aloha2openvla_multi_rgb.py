@@ -107,7 +107,7 @@ class Aloha2openvlaMultiRgb(tfds.core.GeneratorBasedBuilder):
         """定义数据分割，这里直接读取本地路径"""
         
         # TODO: 修改这里为你的 HDF5 文件夹绝对路径
-        INPUT_DIR = '/root/autodl-tmp/xuao/put_on_plate'  # 示例路径
+        INPUT_DIR = '/home/aox/model/xuao/flip_upright'  # 示例路径
         
         return {
             'train': self._generate_examples(path=INPUT_DIR),
@@ -157,6 +157,12 @@ class Aloha2openvlaMultiRgb(tfds.core.GeneratorBasedBuilder):
                     else:
                         # 如果没有右腕相机，用全黑填充或者复制主相机(不推荐)
                         img_wrist_raw = [None] * len(img_high_raw)
+
+                    # 隔帧采样 (Downsampling)，每隔2帧取1帧
+                    img_high_raw = img_high_raw[::2]
+                    img_wrist_raw = img_wrist_raw[::2]
+                    qpos_right = qpos_right[::2]
+                    action_right = action_right[::2]
 
                     num_steps = len(qpos_right)
                     episode = []

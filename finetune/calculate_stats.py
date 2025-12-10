@@ -3,7 +3,7 @@ import numpy as np
 import tensorflow as tf
 from tqdm import tqdm
 
-DATA_DIR = '/root/' 
+DATA_DIR = '/home/aox/model/aloha_rlds/' 
 DATASET_NAME = 'aloha2openvla_multi_rgb'
 
 def compute_stats():
