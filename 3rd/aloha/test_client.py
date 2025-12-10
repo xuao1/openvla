@@ -17,7 +17,7 @@ def simple_test():
     try:
         response = requests.post(
             "http://127.0.1.1:8000/act",
-            json={"image": image, "instruction": instruction, "unnorm_key": "bridge_orig"}
+            json={"image": image, "instruction": instruction, "unnorm_key": "aloha2openvla_multi_rgb_flip_upright"}
         )
         
         if response.status_code == 200:

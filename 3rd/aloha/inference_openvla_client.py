@@ -55,7 +55,7 @@ class OpenVLA:
     def predict_action(self, payload: Dict[str, Any]) -> str:
         # Parse payload components
         image, instruction = payload["image"], payload["instruction"]
-        unnorm_key = payload.get("unnorm_key", "bridge_orig")
+        unnorm_key = payload.get("unnorm_key", "aloha2openvla_multi_rgb_flip_upright")
 
         # Run VLA Inference
         response = requests.post(

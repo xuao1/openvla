@@ -48,14 +48,22 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from PIL import Image
-from transformers import AutoModelForVision2Seq, AutoProcessor
+from transformers import (
+    AutoModelForVision2Seq, 
+    AutoProcessor, 
+    AutoConfig, 
+    AutoImageProcessor
+)
+
+from prismatic.extern.hf.configuration_prismatic import OpenVLAConfig
+from prismatic.extern.hf.modeling_prismatic import OpenVLAForActionPrediction
+from prismatic.extern.hf.processing_prismatic import PrismaticImageProcessor, PrismaticProcessor
 
 # === Utilities ===
 SYSTEM_PROMPT = (
     "A chat between a curious user and an artificial intelligence assistant. "
     "The assistant gives helpful, detailed, and polite answers to the user's questions."
 )
-
 
 def get_openvla_prompt(instruction: str, openvla_path: Union[str, Path]) -> str:
     if "v01" in openvla_path:
@@ -74,6 +82,11 @@ class OpenVLAServer:
         """
         self.openvla_path, self.attn_implementation = openvla_path, attn_implementation
         self.device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
+
+        AutoConfig.register("openvla", OpenVLAConfig)
+        AutoImageProcessor.register(OpenVLAConfig, PrismaticImageProcessor)
+        AutoProcessor.register(OpenVLAConfig, PrismaticProcessor)
+        AutoModelForVision2Seq.register(OpenVLAConfig, OpenVLAForActionPrediction)
 
         # Load VLA Model using HF AutoClasses
         self.processor = AutoProcessor.from_pretrained(self.openvla_path, trust_remote_code=True)
@@ -103,7 +116,7 @@ class OpenVLAServer:
             # Convert JSON-native lists back into ndarrays if needed.
             if not isinstance(image, np.ndarray):
                 image = np.asarray(image, dtype=np.uint8)
-            unnorm_key = payload.get("unnorm_key", "bridge_orig")
+            unnorm_key = payload.get("unnorm_key", "aloha2openvla_multi_rgb_flip_upright")
 
             # Run VLA Inference
             prompt = get_openvla_prompt(instruction, self.openvla_path)
@@ -132,7 +145,7 @@ class OpenVLAServer:
 @dataclass
 class DeployConfig:
     # fmt: off
-    openvla_path: Union[str, Path] = "/home/agilex/xuao/model/openvla-7b"              # HF Hub Path (or path to local run directory)
+    openvla_path: Union[str, Path] = "/home/aox/model/aloha_7b_flip_upright_one_image_full"              # HF Hub Path (or path to local run directory)
 
     # Server Configuration
     host: str = "127.0.1.1"                                                         # Host IP Address
