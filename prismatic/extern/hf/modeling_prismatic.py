@@ -113,14 +113,23 @@ class PrismaticVisionBackbone(nn.Module):
 
     def forward(self, pixel_values: torch.Tensor) -> torch.Tensor:
         """Run image (`pixel_values`) through featurizer; if channel-stacked, then dispatch and sequence stack."""
+        is_multiframe = pixel_values.ndim == 5
+        if is_multiframe:
+            bsz, num_frames, channels, h, w = pixel_values.shape
+            pixel_values = pixel_values.reshape(bsz * num_frames, channels, h, w)
         if not self.use_fused_vision_backbone:
-            return self.featurizer(pixel_values)
+            features = self.featurizer(pixel_values)
+        else:
+            # Split `pixel_values :: [bsz, 2 * 3, resolution, resolution]` =>> featurize =>> channel stack
+            img, img_fused = torch.split(pixel_values, [3, 3], dim=1)
+            patches, patches_fused = self.featurizer(img), self.fused_featurizer(img_fused)
+            features = torch.cat([patches, patches_fused], dim=2)
 
-        # Split `pixel_values :: [bsz, 2 * 3, resolution, resolution]` =>> featurize =>> channel stack
-        img, img_fused = torch.split(pixel_values, [3, 3], dim=1)
-        patches, patches_fused = self.featurizer(img), self.fused_featurizer(img_fused)
+        if is_multiframe:
+            features = features.view(bsz, num_frames, -1, features.shape[-1])
+            features = features.flatten(1, 2)
 
-        return torch.cat([patches, patches_fused], dim=2)
+        return features
 
 
 # === Prismatic Projector (nn.Module) Definitions ===

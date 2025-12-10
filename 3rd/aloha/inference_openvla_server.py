@@ -111,16 +111,51 @@ class OpenVLAServer:
                 payload = json.loads(payload["encoded"])
 
             # Parse payload components
-            image, instruction = payload["image"], payload["instruction"]
+            instruction = payload["instruction"]
 
-            # Convert JSON-native lists back into ndarrays if needed.
-            if not isinstance(image, np.ndarray):
-                image = np.asarray(image, dtype=np.uint8)
+            raw_images = []
+            if "image_primary" in payload and "image_wrist" in payload:
+                raw_images = [payload["image_primary"], payload["image_wrist"]]
+            elif "image" in payload:
+                raw_images = [payload["image"]]
+            else:
+                raise ValueError("Payload must contain either 'image' or both 'image_primary' and 'image_wrist'.")
+            
+            pil_images = []
+            for img in raw_images:
+                if not isinstance(img, np.ndarray):
+                    img = np.asarray(img, dtype=np.uint8)
+                pil_images.append(Image.fromarray(img).convert("RGB"))
+
             unnorm_key = payload.get("unnorm_key", "aloha2openvla_multi_rgb_flip_upright")
+            prompt = get_openvla_prompt(instruction, self.openvla_path)
+
+            if len(pil_images) > 1:
+                pixel_values_list = []
+                inputs_text = None
+
+                for img in pil_images:
+                    single_inputs = self.processor(prompt, img).to(self.device, dtype=torch.bfloat16)
+                    pixel_values_list.append(single_inputs["pixel_values"])
+                    inputs_text = single_inputs
+                
+                combined_pixel_values = torch.cat(pixel_values_list, dim=0)
+                combined_pixel_values = combined_pixel_values.unsqueeze(0)
+                inputs = {
+                    "input_ids": inputs_text["input_ids"],
+                    "attention_mask": inputs_text["attention_mask"],
+                    "pixel_values": combined_pixel_values
+                }
+            else:
+                inputs = self.processor(prompt, pil_images[0]).to(self.device, dtype=torch.bfloat16)
+
+            # print("Inputs keys:", inputs.keys())
+            # print("Pixel values shape:", inputs["pixel_values"].shape)
+            # print("inputs input_ids shape:", inputs["input_ids"].shape)
+            # print("inputs attention_mask shape:", inputs["attention_mask"].shape)
+            # print("Inputs attention_mask: ", inputs["attention_mask"])
 
             # Run VLA Inference
-            prompt = get_openvla_prompt(instruction, self.openvla_path)
-            inputs = self.processor(prompt, Image.fromarray(image).convert("RGB")).to(self.device, dtype=torch.bfloat16)
             action = self.vla.predict_action(**inputs, unnorm_key=unnorm_key, do_sample=False)
             if double_encode:
                 return JSONResponse(json_numpy.dumps(action))
