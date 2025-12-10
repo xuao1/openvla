@@ -1,21 +1,22 @@
 """
-OpenVLA 专用：将 ALOHA HDF5 转换为 RLDS 格式，仅保留右臂数据。
+OpenVLA 专用：将 ALOHA HDF5 转换为 RLDS 格式，仅保留右臂数据，并调整图像大小。
 """
 
 import h5py
 import numpy as np
 import tensorflow_datasets as tfds
 import tensorflow as tf
-import rlds
 import glob
 import json
 import os
 import cv2
 
 # 定义数据集的基本信息
+TARGET_WIDTH = 256
+TARGET_HEIGHT = 256
 _DESCRIPTION = """
 Custom dataset for OpenVLA fine-tuning (Right Arm Only).
-Converted from ALOHA HDF5 format.
+Converted from ALOHA HDF5 format with image resizing.
 """
 
 _CITATION = ""
@@ -39,14 +40,14 @@ class Aloha2openvlaMultiRgb(tfds.core.GeneratorBasedBuilder):
                     'observation': tfds.features.FeaturesDict({
                         # 主相机 (cam_high)
                         'image': tfds.features.Image(
-                            shape=(480, 640, 3),
+                            shape=(TARGET_HEIGHT, TARGET_WIDTH, 3),
                             dtype=np.uint8,
                             encoding_format='jpeg',
                             doc='Main camera RGB observation.',
                         ),
                         # 手腕相机 (cam_right_wrist) - OpenVLA 可选，但建议保留
                         'wrist_image': tfds.features.Image(
-                            shape=(480, 640, 3),
+                            shape=(TARGET_HEIGHT, TARGET_WIDTH, 3),
                             dtype=np.uint8,
                             encoding_format='jpeg',
                             doc='Wrist camera RGB observation.',
@@ -106,7 +107,7 @@ class Aloha2openvlaMultiRgb(tfds.core.GeneratorBasedBuilder):
         """定义数据分割，这里直接读取本地路径"""
         
         # TODO: 修改这里为你的 HDF5 文件夹绝对路径
-        INPUT_DIR = '/path/to/your/hdf5/data' 
+        INPUT_DIR = '/root/autodl-tmp/xuao/put_on_plate'  # 示例路径
         
         return {
             'train': self._generate_examples(path=INPUT_DIR),
@@ -168,14 +169,17 @@ class Aloha2openvlaMultiRgb(tfds.core.GeneratorBasedBuilder):
                         
                         # 1. 解码 High Cam
                         img_high = cv2.imdecode(np.frombuffer(img_high_raw[i], np.uint8), cv2.IMREAD_COLOR)
-                        img_high = cv2.cvtColor(img_high, cv2.COLOR_BGR2RGB) # 转 RGB
+                        # Resize 到 (256, 256)
+                        img_high = cv2.resize(img_high, (TARGET_WIDTH, TARGET_HEIGHT), interpolation=cv2.INTER_AREA)
+                        # img_high = cv2.cvtColor(img_high, cv2.COLOR_BGR2RGB) # 转 RGB
                         
                         # 2. 解码 Wrist Cam
                         if img_wrist_raw[i] is not None:
                             img_wrist = cv2.imdecode(np.frombuffer(img_wrist_raw[i], np.uint8), cv2.IMREAD_COLOR)
-                            img_wrist = cv2.cvtColor(img_wrist, cv2.COLOR_BGR2RGB)
+                            img_wrist = cv2.resize(img_wrist, (TARGET_WIDTH, TARGET_HEIGHT), interpolation=cv2.INTER_AREA)
+                            # img_wrist = cv2.cvtColor(img_wrist, cv2.COLOR_BGR2RGB)
                         else:
-                            img_wrist = np.zeros((480, 640, 3), dtype=np.uint8)
+                            img_wrist = np.zeros((TARGET_HEIGHT, TARGET_WIDTH, 3), dtype=np.uint8)
 
                         episode.append({
                             'observation': {
