@@ -179,9 +179,9 @@ class DinoSigLIPViTBackbone(VisionBackbone):
     def num_patches(self) -> int:
         assert self.dino_featurizer.patch_embed.num_patches == self.siglip_featurizer.patch_embed.num_patches
         # ================ For only one camera view (e.g., "primary") ================
-        # return self.dino_featurizer.patch_embed.num_patches
+        return self.dino_featurizer.patch_embed.num_patches
         # =============== For multi-camera views (e.g., "primary" + "wrist"), we concatenate them along width dimension ===============
-        return self.dino_featurizer.patch_embed.num_patches * 2
+        # return self.dino_featurizer.patch_embed.num_patches * 2
 
     @property
     def half_precision_dtype(self) -> torch.dtype:
