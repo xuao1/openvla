@@ -35,6 +35,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
 from PIL import Image as PILImage
+import cv2
 import requests
 import json
 import json_numpy
@@ -153,12 +154,15 @@ def inference_process(args, ros_operator, t, openvla_model):
         # print(f"✅ pre img_front shape: {img_front.shape}")
         
         # 对图像进行resize处理
-        img_front = image_tools.resize_with_pad(img_front, args.img_size, args.img_size)
+        # img_front = image_tools.resize_with_pad(img_front, args.img_size, args.img_size)
+        img_front = cv2.resize(img_front, (args.img_size, args.img_size))
         # img_left = image_tools.resize_with_pad(img_left, args.img_size, args.img_size)
         # img_right = image_tools.resize_with_pad(img_right, args.img_size, args.img_size)
         # print(f"✅ after img_front shape: {img_front.shape}")
         # img_front = np.transpose(img_front, (2, 0, 1)).astype(np.uint8)
         img_front = img_front.astype(np.uint8)
+        # vis_image = PILImage.fromarray(img_front)
+        # vis_image.save(f"./debug_inference/frame_{t:05d}.png")
         # img_left = np.transpose(img_left, (2, 0, 1)).astype(np.uint8)
         # img_right = np.transpose(img_right, (2, 0, 1)).astype(np.uint8)
         # print(f"✅ after img_front shape: {img_front.shape}")
@@ -232,17 +236,19 @@ def model_inference(args, ros_operator, save_episode=True):
     left0 = [-0.00133514404296875, 0.00209808349609375, 0.01583099365234375, -0.032616615295410156, -0.00286102294921875, 0.00095367431640625, 3.557830810546875]
     right0 = [-0.00133514404296875, 0.00438690185546875, 0.034523963928222656, -0.053597450256347656, -0.00476837158203125, -0.00209808349609375, 3.557830810546875]
     left1 = [-0.00133514404296875, 0.00209808349609375, 0.01583099365234375, -0.032616615295410156, -0.00286102294921875, 0.00095367431640625, -0.3393220901489258]
-    right1 = [-0.00133514404296875, 0.00247955322265625, 0.01583099365234375, -0.032616615295410156, -0.00286102294921875, 0.00095367431640625, -0.3397035598754883]
-    
+    # right1 = [-0.00133514404296875, 0.00247955322265625, 0.01583099365234375, -0.032616615295410156, -0.00286102294921875, 0.00095367431640625, -0.3397035598754883]
+    right1 = [0.0377837, 1.4326408, -1.1984551, 0.5086321, 0.89058596, -0.1972742, 0.0328]
+
     ros_operator.puppet_arm_publish_continuous(left0, right0)
     input("Enter any key to continue :")
     ros_operator.puppet_arm_publish_continuous(left1, right1)
     action = None
     chunk_size = args.action_chunk_size
-    pre_action = np.array(
-        [-0.00133514404296875, 0.00209808349609375, 0.01583099365234375, -0.032616615295410156, -0.00286102294921875, 0.00095367431640625, -0.3393220901489258] + 
-        [-0.00133514404296875, 0.00247955322265625, 0.01583099365234375, -0.032616615295410156, -0.00286102294921875, 0.00095367431640625, -0.3397035598754883]
-    )
+    # pre_action = np.array(
+    #     [-0.00133514404296875, 0.00209808349609375, 0.01583099365234375, -0.032616615295410156, -0.00286102294921875, 0.00095367431640625, -0.3393220901489258] + 
+    #     [-0.00133514404296875, 0.00247955322265625, 0.01583099365234375, -0.032616615295410156, -0.00286102294921875, 0.00095367431640625, -0.3397035598754883]
+    # )
+    pre_action = np.array(left1 + right1)
     # 推理
     with torch.inference_mode():
         while True and not rospy.is_shutdown():
