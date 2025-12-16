@@ -160,7 +160,7 @@ def convert_openvla_weights_to_hf(cfg: HFConvertConfig) -> None:
     )
 
     # use local model
-    hf_config.hf_llm_id = "/home/aox/model/Llama-2-7b-hf"
+    hf_config.hf_llm_id = "/data/aox/model/Llama-2-7b-hf"
 
     # Instantiate & Add Pad to Tokenizer =>> following `prismatic.models.materialize.get_llm_backbone_and_tokenizer`
     #   TODO (siddk) :: Implement batched generation -- in which case this should set `padding_side = "left"`!
