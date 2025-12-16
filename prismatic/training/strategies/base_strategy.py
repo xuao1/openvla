@@ -284,6 +284,119 @@ class TrainingStrategy(ABC):
             for batch in dataloader:
                 # Note that we'll unpack batch (and let AMP/FSDP do its thing) in the VLM.forward() call
                 #   => Basically, if we're using mixed precision (or not), autocast()/FSDP will move to device!
+                # >>>>>>>>>>>>>>>> [DEBUG START] 插入这段代码 >>>>>>>>>>>>>>>>
+                # 只在第 0 号进程且是第一次迭代时打印
+                if overwatch.is_rank_zero() and not hasattr(self, "_debug_printed"):
+                    self._debug_printed = True  # 设置标志位，防止后续重复打印
+                    print("\n" + "="*80)
+                    print("🔍 OpenVLA Training Debug: Checking First Batch Inputs")
+                    print("="*80)
+
+                    # 1. 打印并保存图片 (Image Input)
+                    # pixel_values 通常是经过归一化的张量
+                    imgs = batch["pixel_values"]
+                    if isinstance(imgs, dict): # 处理 SigLIP 等可能返回 dict 的情况
+                        for k, v in imgs.items():
+                            print(f"🖼️ [Image Input] Key: {k}, Shape: {v.shape}, Range: [{v.min():.2f}, {v.max():.2f}]")
+                    else:
+                        print(f"🖼️ [Image Input] Shape: {imgs.shape}, Range: [{imgs.min():.2f}, {imgs.max():.2f}]")
+
+                    # 2. 打印文本指令 (Instruction Input)
+                    # 需要用到 LLM 的 tokenizer 进行 decode
+                    # 你的 vlm 对象里应该有 tokenizer
+                    tokenizer = self.vlm.llm_backbone.get_tokenizer() 
+                    input_ids = batch["input_ids"][0] # 取 Batch 中的第一条数据
+                    decoded_text = tokenizer.decode(input_ids, skip_special_tokens=False)
+                    print(f"\n📝 [Instruction Input] (Decoded):\n{decoded_text}")
+                    print("-" * 40)
+
+                    # 3. 打印目标动作 (Action Labels)
+                    # Labels 中 -100 是被 mask 掉的部分（通常是指令部分的 loss 不计算）
+                    # 剩下的部分就是 Action Token ID
+                    labels = batch["labels"][0]
+                    valid_labels = labels[labels != -100]
+                    print(f"🎯 [Target Actions] (Raw Token IDs): {valid_labels.tolist()}")
+                    
+                    # 尝试解码回连续动作数值 (Continuous Actions)
+                    # 使用传入函数的 action_tokenizer
+                    try:
+                        # 注意：valid_labels 可能包含 EOS token，需要去掉才能给 action_tokenizer
+                        # 简单的做法是直接转换，看是否报错，或者只取前7个维度
+                        pred_actions = action_tokenizer.decode_token_ids_to_actions(valid_labels.cpu().numpy())
+                        print(f"🎯 [Target Actions] (Detokenized Values):\n{pred_actions}")
+                    except Exception as e:
+                        print(f"   -> Could not detokenize actions directly: {e}")
+
+                    # 1. 构建 save_payload (你原来的代码)
+                    save_payload = {
+                        k: v.cpu() if isinstance(v, torch.Tensor) else v 
+                        for k, v in batch.items()
+                    }
+
+                    # 2. 详细且安全的打印逻辑
+                    print("\n" + "="*80)
+                    print("👀 DEBUG: Inspecting First Batch Content (Full Detail)")
+                    print("="*80)
+
+                    for key, val in save_payload.items():
+                        print(f"\n🔹 Key: '{key}'")
+                        
+                        # Case A: 处理字典 (例如 pixel_values 包含 siglip/dino)
+                        if isinstance(val, dict):
+                            print(f"   Type: Dict (Keys: {list(val.keys())})")
+                            for sub_k, sub_v in val.items():
+                                if isinstance(sub_v, torch.Tensor):
+                                    print(f"     - SubKey: '{sub_k}'")
+                                    print(f"       Shape: {sub_v.shape}")
+                                    print(f"       Dtype: {sub_v.dtype}")
+                                    print(f"       Range: [{sub_v.min():.4f}, {sub_v.max():.4f}]")
+                                else:
+                                    print(f"     - SubKey: '{sub_k}': {sub_v}")
+
+                        # Case B: 处理文本 (input_ids) -> 尝试解码给人看
+                        elif key == "input_ids" and isinstance(val, torch.Tensor):
+                            print(f"   Shape: {val.shape}")
+                            try:
+                                # 尝试调用 vlm 中的 tokenizer 进行解码
+                                # 注意：这里假设上下文中有名为 vlm 的变量
+                                tokenizer = vlm.llm_backbone.get_tokenizer()
+                                decoded_text = tokenizer.decode(val[0], skip_special_tokens=False)
+                                print(f"   📜 [Decoded Text - Sample 0]:\n{'-'*40}\n{decoded_text}\n{'-'*40}")
+                            except Exception as e:
+                                print(f"   (Could not decode text automatically: {e})")
+                                print(f"   Raw IDs (first 20): {val[0][:20].tolist()} ...")
+
+                        # Case C: 处理图像 Tensor (直接是 Tensor 的情况)
+                        elif key == "pixel_values" and isinstance(val, torch.Tensor):
+                            print(f"   Shape: {val.shape}")
+                            print(f"   Range: [{val.min():.4f}, {val.max():.4f}]")
+                            print("   (Skipping full tensor print to prevent terminal crash)")
+
+                        # Case D: 处理 Labels (Action) -> 打印前几位
+                        elif key == "labels" and isinstance(val, torch.Tensor):
+                            print(f"   Shape: {val.shape}")
+                            # 过滤掉 -100 方便查看
+                            valid_labels = val[0][val[0] != -100]
+                            print(f"   🎯 [Valid Labels - Sample 0] (Actions): {valid_labels.tolist()}")
+
+                        # Case E: 其他 Tensor -> 打印形状和前几个数值
+                        elif isinstance(val, torch.Tensor):
+                            print(f"   Shape: {val.shape}")
+                            # 扁平化后打印前 10 个数
+                            flat_v = val.flatten()
+                            preview = flat_v[:10].tolist() if flat_v.numel() > 0 else []
+                            print(f"   Preview: {preview} ...")
+
+                        # Case F: 其他类型 (str, int, float)
+                        else:
+                            print(f"   Value: {val}")
+                    
+                    # 保存到运行目录下
+                    torch.save(save_payload, "first_train_step_inputs.pt")
+                    print("✅ Saved! You can now analyze this file offline.")
+
+                    print("="*80 + "\n")
+                # <<<<<<<<<<<<<<<< [DEBUG END] 插入结束 <<<<<<<<<<<<<<<<
                 with torch.autocast(
                     "cuda", dtype=self.mixed_precision_dtype, enabled=self.enable_mixed_precision_training
                 ):
@@ -336,6 +449,13 @@ class TrainingStrategy(ABC):
                     action_tokenizer.decode_token_ids_to_actions(action_gt[mask].cpu().numpy())
                 )
                 action_l1_loss = torch.nn.functional.l1_loss(continuous_actions_pred, continuous_actions_gt)
+
+                if overwatch.is_rank_zero():
+                    print("loss is: ", loss.item())
+                    print("action_preds is: ", action_preds)
+                    print("action_gt is: ", action_gt)
+                    print("continuous_actions_pred is: ", continuous_actions_pred)
+                    print("continuous_actions_gt is: ", continuous_actions_gt)
 
                 # Commit Metrics
                 metrics.commit(action_accuracy=action_accuracy, l1_loss=action_l1_loss, update_step_time=True)

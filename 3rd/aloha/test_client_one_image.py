@@ -12,12 +12,12 @@ import requests
 def simple_test():
     # Create a simple test image
     image = np.random.randint(0, 255, (256, 256, 3), dtype=np.uint8)
-    instruction = "pick up the blue block"
+    instruction = "flip the object upright"
     
     try:
         response = requests.post(
             "http://127.0.1.1:8000/act",
-            json={"image": image, "instruction": instruction, "unnorm_key": "aloha2openvla_multi_rgb_flip_upright"}
+            json={"debug_use_saved_pt": True, "image": image, "instruction": instruction, "unnorm_key": "aloha2openvla_multi_rgb_flip_upright"}
         )
         
         if response.status_code == 200:

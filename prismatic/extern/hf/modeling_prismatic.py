@@ -542,6 +542,12 @@ class OpenVLAForActionPrediction(PrismaticForConditionalGeneration):
             normalized_actions,
         )
 
+        print("generated_ids:", generated_ids)
+        print("predicted_action_token_ids:", predicted_action_token_ids)
+        print("discretized_actions:", discretized_actions)
+        print("normalized_actions:", normalized_actions)
+        print("unnormalized actions:", actions)
+
         return actions
 
     @staticmethod
