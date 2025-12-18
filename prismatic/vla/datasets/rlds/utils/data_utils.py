@@ -63,6 +63,7 @@ def normalize_action_and_proprio(traj: Dict, metadata: Dict, normalization_type:
     keys_to_normalize = {"action": "action", "proprio": "observation/proprio"}
 
     if normalization_type == NormalizationType.NORMAL:
+        print("Normalizing with NORMAL")
         for key, traj_key in keys_to_normalize.items():
             mask = metadata[key].get("mask", tf.ones_like(metadata[key]["mean"], dtype=tf.bool))
             traj = dl.transforms.selective_tree_map(
@@ -74,6 +75,7 @@ def normalize_action_and_proprio(traj: Dict, metadata: Dict, normalization_type:
         return traj
 
     elif normalization_type in [NormalizationType.BOUNDS, NormalizationType.BOUNDS_Q99]:
+        print(f"Normalizing with {normalization_type}")
         for key, traj_key in keys_to_normalize.items():
             if normalization_type == NormalizationType.BOUNDS:
                 low = metadata[key]["min"]
