@@ -83,6 +83,7 @@ def normalize_action_and_proprio(traj: Dict, metadata: Dict, normalization_type:
             elif normalization_type == NormalizationType.BOUNDS_Q99:
                 low = metadata[key]["q01"]
                 high = metadata[key]["q99"]
+                print(f"Quantile normalization for {key}: low={low}, high={high}")
             mask = metadata[key].get("mask", tf.ones_like(metadata[key]["min"], dtype=tf.bool))
             traj = dl.transforms.selective_tree_map(
                 traj,

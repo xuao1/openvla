@@ -547,6 +547,7 @@ class OpenVLAForActionPrediction(PrismaticForConditionalGeneration):
         print("discretized_actions:", discretized_actions)
         print("normalized_actions:", normalized_actions)
         print("unnormalized actions:", actions)
+        print("self.bin_centers.shape[0]:", self.bin_centers.shape[0])
 
         return actions
 

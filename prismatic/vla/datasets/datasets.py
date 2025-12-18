@@ -58,6 +58,7 @@ class RLDSBatchTransform:
 
         # Tokenize (w/ `base_tokenizer`)
         input_ids = self.base_tokenizer(prompt_builder.get_prompt(), add_special_tokens=True).input_ids
+        print("self.base_tokenizer is: ", self.base_tokenizer)
         labels = list(input_ids)
         print("action is: ", action)
         print("input_ids is: ", input_ids)
@@ -68,6 +69,17 @@ class RLDSBatchTransform:
         input_ids, labels = torch.tensor(input_ids), torch.tensor(labels)
         # ================ For only one camera view (e.g., "primary") ================
         pixel_values = self.image_transform(img)
+        # 将 PIL Image 转为 numpy 数组
+        img_array = np.array(img)
+
+        # 打印数组形状和部分数值
+        print("img array shape:", img_array.shape) 
+        print("img data (first 3x3 pixels):\n", img_array[:3, :3, :])
+
+        # 如果你想完整保存到文件（如同之前保存 pixel_values 一样）
+        with open("debug_img_raw_values.txt", "w") as f:
+            f.write(np.array2string(img_array, threshold=np.inf))
+        img.save("debug_img_image_save.png")
         # ================ For multi-camera views (e.g., "primary" + "wrist"), we concatenate them along width dimension ===============
         # processed_imgs = [self.image_transform(img) for img in imgs]
         # if isinstance(processed_imgs[0], dict):
