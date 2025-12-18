@@ -59,6 +59,9 @@ class RLDSBatchTransform:
         # Tokenize (w/ `base_tokenizer`)
         input_ids = self.base_tokenizer(prompt_builder.get_prompt(), add_special_tokens=True).input_ids
         labels = list(input_ids)
+        print("action is: ", action)
+        print("input_ids is: ", input_ids)
+        print("labels is: ", labels)
 
         # Tensorize =>> Run Image Transform to get `pixel_values` =>> Return
         #   =>> IMPORTANT :: IF WE'RE USING HF LLM.forward(..., labels=labels), SHIFTING HAPPENS _INSIDE_ MODEL!
