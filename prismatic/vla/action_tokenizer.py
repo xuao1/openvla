@@ -25,6 +25,7 @@ class ActionTokenizer:
         :param min_action: Minimum action value (for clipping, setting lower bound on bin interval).
         :param max_action: Maximum action value (for clipping, setting upper bound on bin interval).
         """
+        bins = 2048
         self.tokenizer, self.n_bins, self.min_action, self.max_action = tokenizer, bins, min_action, max_action
 
         # Create Uniform Bins + Compute Bin Centers
