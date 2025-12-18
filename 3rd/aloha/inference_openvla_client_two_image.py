@@ -634,9 +634,9 @@ def get_arguments():
                         default='/camera_r/depth/image_raw', required=False)
     
     parser.add_argument('--puppet_arm_left_cmd_topic', action='store', type=str, help='puppet_arm_left_cmd_topic',
-                        default='/master/joint_left', required=False)
+                        default='/puppet/pos_joint_cmd_left', required=False)
     parser.add_argument('--puppet_arm_right_cmd_topic', action='store', type=str, help='puppet_arm_right_cmd_topic',
-                        default='/master/joint_right', required=False)
+                        default='/puppet/pos_joint_cmd_right', required=False)
     parser.add_argument('--puppet_arm_left_topic', action='store', type=str, help='puppet_arm_left_topic',
                         default='/puppet/joint_left', required=False)
     parser.add_argument('--puppet_arm_right_topic', action='store', type=str, help='puppet_arm_right_topic',
