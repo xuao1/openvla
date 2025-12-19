@@ -58,7 +58,7 @@ class OpenVLA:
         # Parse payload components
         instruction = payload["instruction"]
         image = payload["image"]
-        unnorm_key = payload.get("unnorm_key", "aloha2openvla_multi_rgb_flip_upright")
+        unnorm_key = payload.get("unnorm_key", "aloha2openvla_multi_rgb_lift")
 
         # Run VLA Inference
         response = requests.post(
