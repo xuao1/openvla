@@ -39,6 +39,7 @@ import cv2
 import requests
 import json
 import json_numpy
+from skimage.metrics import structural_similarity as ssim
 
 json_numpy.patch()
 
@@ -126,6 +127,7 @@ def get_depth_image(observation, camera_names):
     return curr_image
 
 
+# 全局变量定义（保持你之前的修改）
 debug_img_idx = 0
 debug_img_files = None
 debug_img_dir = '../../finetune/saved_frames/episode_0'
@@ -135,7 +137,6 @@ def inference_process(args, ros_operator, t, openvla_model):
     global inference_actions
     global inference_timestep
     
-    # --- [修改 2] 引入我们定义的全局图片变量 ---
     global debug_img_idx
     global debug_img_files
     global debug_img_dir
@@ -143,53 +144,77 @@ def inference_process(args, ros_operator, t, openvla_model):
     print_flag = True
     rate = rospy.Rate(args.publish_rate)
     
-    # --- [修改 3] 只在第一次调用时加载文件列表 (懒加载) ---
+    # 懒加载文件列表
     if debug_img_files is None:
         if os.path.exists(debug_img_dir):
             debug_img_files = sorted([f for f in os.listdir(debug_img_dir) if f.endswith('.png')])
-            print(f"Global Init: Loaded {len(debug_img_files)} images from disk.")
         else:
             debug_img_files = []
-            print(f"Warning: Directory {debug_img_dir} not found!")
-    
+
     total_imgs = len(debug_img_files)
-    # -----------------------------------
 
     while True and not rospy.is_shutdown():
-        # ... (ros_operator.get_frame 部分保持不变) ...
+        # 1. 获取实时数据 (Real)
         result = ros_operator.get_frame()
         if not result:
-             # ... 略 ...
+             if print_flag:
+                 print("syn fail")
+                 print_flag = False
              rate.sleep()
              continue
         
-        # 解包数据
-        (img_front, img_left, img_right, img_front_depth, img_left_depth, img_right_depth,
+        # 解包实时数据
+        (real_img_front, img_left, img_right, img_front_depth, img_left_depth, img_right_depth,
          puppet_arm_left, puppet_arm_right, robot_base) = result
         
-        # --- [修改 4] 使用全局索引读取图片 ---
+        # 2. 准备变量用于后续推理 (默认为实时数据)
+        img_front_for_inference = real_img_front
+
+        # 3. 读取本地图片 (Fake) 并计算相似度
         if total_imgs > 0:
-            # 这里的 debug_img_idx 是全局变量，会随着调用次数增加
             current_file = debug_img_files[debug_img_idx]
             img_path = os.path.join(debug_img_dir, current_file)
             
-            img_from_disk = cv2.imread(img_path)
+            # 读取本地图片 (BGR)
+            disk_img_bgr = cv2.imread(img_path)
             
-            if img_from_disk is not None:
-                img_front = cv2.cvtColor(img_from_disk, cv2.COLOR_BGR2RGB)
+            if disk_img_bgr is not None:
+                # 转为 RGB
+                disk_img_rgb = cv2.cvtColor(disk_img_bgr, cv2.COLOR_BGR2RGB)
                 
-                print(f"DEBUG: Using frame {debug_img_idx}/{total_imgs}: {current_file}")
+                # --- [新增] 相似度计算核心逻辑 ---
+                # 为了比较，必须将实时图片 (real_img_front) Resize 成和本地图片一样的尺寸
+                h, w, _ = disk_img_rgb.shape
+                real_img_resized = cv2.resize(real_img_front, (w, h))
                 
-                # --- [修改 5] 递增全局索引 ---
+                # 确保两个都是 uint8 格式
+                real_img_resized = real_img_resized.astype(np.uint8)
+                disk_img_rgb = disk_img_rgb.astype(np.uint8)
+
+                # 计算 MSE (越小越好)
+                mse_score = np.mean((real_img_resized - disk_img_rgb) ** 2)
+                
+                # 计算 SSIM (越接近 1 越好)
+                # channel_axis=2 表示图片是 (H, W, C) 格式
+                # win_size 默认为7，如果图片很小(小于7x7)可能会报错，这里加个保护
+                try:
+                    ssim_score = ssim(real_img_resized, disk_img_rgb, channel_axis=2, win_size=3)
+                except Exception as e:
+                    ssim_score = -1.0 # 计算失败
+
+                print(f"Frame {debug_img_idx:04d} | MSE: {mse_score:7.2f} (Low=Good) | SSIM: {ssim_score:.4f} (1.0=Same)")
+                # ------------------------------------
+
+                # 使用本地图片覆盖用于推理的图片
+                img_front_for_inference = disk_img_rgb
+                img_front = img_front_for_inference
+                
+                # 索引递增
                 debug_img_idx += 1
-                
-                # 如果读完了，重置为0，循环播放
                 if debug_img_idx >= total_imgs:
                     debug_img_idx = 0 
-                    print("DEBUG: Episode finished, looping back to start.")
             else:
                 print(f"Failed to read {img_path}")
-        # ----------------------------------------------
         
         # 对图像进行resize处理
         # 这里的 img_front 已经被替换成了本地文件读取的图片
