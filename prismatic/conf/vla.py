@@ -163,8 +163,8 @@ class Exp_Aloha_FullFT(Exp_DinoSigLIP_224px_Bridge):
     # 显存与 Batch Size 设置
     # 假设你有 8 张 A100 (80G)。如果显存不足，减小 per_device_batch_size
     expected_world_size: int = 4
-    per_device_batch_size: int = 4   # 单卡 batch size
-    global_batch_size: int = 16  
+    per_device_batch_size: int = 16   # 单卡 batch size
+    global_batch_size: int = 64  
     
     # 图像增强
     image_aug: bool = False

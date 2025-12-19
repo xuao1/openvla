@@ -155,7 +155,8 @@ def inference_process(args, ros_operator, t, openvla_model):
         
         # 对图像进行resize处理
         # img_front = image_tools.resize_with_pad(img_front, args.img_size, args.img_size)
-        img_front = cv2.resize(img_front, (args.img_size, args.img_size))
+        # img_front = cv2.resize(img_front, (args.img_size, args.img_size))
+        img_front = cv2.resize(img_front, (args.img_size, args.img_size), interpolation=cv2.INTER_AREA) # 指定 INTER_AREA
         # img_left = image_tools.resize_with_pad(img_left, args.img_size, args.img_size)
         # img_right = image_tools.resize_with_pad(img_right, args.img_size, args.img_size)
         # print(f"✅ after img_front shape: {img_front.shape}")
