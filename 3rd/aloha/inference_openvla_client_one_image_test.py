@@ -126,67 +126,67 @@ def get_depth_image(observation, camera_names):
     return curr_image
 
 
+debug_img_idx = 0
+debug_img_files = None
+debug_img_dir = '../../finetune/saved_frames/episode_0'
+
 def inference_process(args, ros_operator, t, openvla_model):
     global inference_lock
     global inference_actions
     global inference_timestep
+    
+    # --- [修改 2] 引入我们定义的全局图片变量 ---
+    global debug_img_idx
+    global debug_img_files
+    global debug_img_dir
+    
     print_flag = True
     rate = rospy.Rate(args.publish_rate)
     
-    # --- [新增 1] 初始化本地图片读取配置 ---
-    # 图片所在的文件夹
-    dataset_img_dir = '../../finetune/saved_frames/episode_0'
+    # --- [修改 3] 只在第一次调用时加载文件列表 (懒加载) ---
+    if debug_img_files is None:
+        if os.path.exists(debug_img_dir):
+            debug_img_files = sorted([f for f in os.listdir(debug_img_dir) if f.endswith('.png')])
+            print(f"Global Init: Loaded {len(debug_img_files)} images from disk.")
+        else:
+            debug_img_files = []
+            print(f"Warning: Directory {debug_img_dir} not found!")
     
-    # 获取文件夹内所有 png 图片，并按文件名排序 (确保 frame_0000 -> frame_0001 顺序)
-    if os.path.exists(dataset_img_dir):
-        img_files = sorted([f for f in os.listdir(dataset_img_dir) if f.endswith('.png')])
-    else:
-        img_files = []
-        print(f"Warning: Directory {dataset_img_dir} not found!")
-
-    img_idx = 0 # 当前读取的图片索引
-    total_imgs = len(img_files)
-    print(f"Start loading images from local disk. Total frames: {total_imgs}")
+    total_imgs = len(debug_img_files)
     # -----------------------------------
 
     while True and not rospy.is_shutdown():
-        # 依然调用 ros_operator 以保持时钟同步和获取其他数据(如 robot_base, arm_state)
+        # ... (ros_operator.get_frame 部分保持不变) ...
         result = ros_operator.get_frame()
         if not result:
-            if print_flag:
-                print("syn fail")
-                print_flag = False
-            rate.sleep()
-            continue
-        print_flag = True
+             # ... 略 ...
+             rate.sleep()
+             continue
         
         # 解包数据
         (img_front, img_left, img_right, img_front_depth, img_left_depth, img_right_depth,
          puppet_arm_left, puppet_arm_right, robot_base) = result
         
-        # --- [新增 2] 从文件读取图片并覆盖 img_front ---
+        # --- [修改 4] 使用全局索引读取图片 ---
         if total_imgs > 0:
-            # 构造当前帧的文件路径
-            current_file = img_files[img_idx]
-            img_path = os.path.join(dataset_img_dir, current_file)
+            # 这里的 debug_img_idx 是全局变量，会随着调用次数增加
+            current_file = debug_img_files[debug_img_idx]
+            img_path = os.path.join(debug_img_dir, current_file)
             
-            # 使用 opencv 读取图片
-            # 注意：cv2.imread 默认读入格式为 BGR
             img_from_disk = cv2.imread(img_path)
             
             if img_from_disk is not None:
-                # 转换 BGR -> RGB (因为模型通常需要 RGB，且之前的 PIL 保存也是 RGB)
                 img_front = cv2.cvtColor(img_from_disk, cv2.COLOR_BGR2RGB)
                 
-                # (可选) 打印当前使用的是哪一张图
-                # print(f"Using local image: {current_file}")
+                print(f"DEBUG: Using frame {debug_img_idx}/{total_imgs}: {current_file}")
                 
-                # 更新索引，准备下一帧
-                img_idx += 1
-                # 如果读完了，可以选择循环播放或者停留在最后一帧
-                if img_idx >= total_imgs:
-                    img_idx = 0 # 循环播放
-                    print("Episode finished, looping back to start.")
+                # --- [修改 5] 递增全局索引 ---
+                debug_img_idx += 1
+                
+                # 如果读完了，重置为0，循环播放
+                if debug_img_idx >= total_imgs:
+                    debug_img_idx = 0 
+                    print("DEBUG: Episode finished, looping back to start.")
             else:
                 print(f"Failed to read {img_path}")
         # ----------------------------------------------
