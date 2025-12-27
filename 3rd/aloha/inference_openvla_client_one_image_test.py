@@ -185,7 +185,7 @@ def inference_process(args, ros_operator, t, openvla_model):
                 # --- [新增] 相似度计算核心逻辑 ---
                 # 为了比较，必须将实时图片 (real_img_front) Resize 成和本地图片一样的尺寸
                 h, w, _ = disk_img_rgb.shape
-                real_img_resized = cv2.resize(real_img_front, (w, h))
+                real_img_resized = cv2.resize(real_img_front, (w, h), interpolation=cv2.INTER_AREA)
                 
                 # 确保两个都是 uint8 格式
                 real_img_resized = real_img_resized.astype(np.uint8)
@@ -223,6 +223,10 @@ def inference_process(args, ros_operator, t, openvla_model):
         img_front = img_front.astype(np.uint8)
         vis_image = PILImage.fromarray(img_front)
         vis_image.save(f"./debug_inference/frame_{t:05d}.png")
+
+        real_img_front = real_img_resized.astype(np.uint8)
+        real_img_front_vis_image = PILImage.fromarray(real_img_front)
+        real_img_front_vis_image.save(f"./debug_inference/frame_{t:05d}_real.png")
         # img_left = np.transpose(img_left, (2, 0, 1)).astype(np.uint8)
         # img_right = np.transpose(img_right, (2, 0, 1)).astype(np.uint8)
         # print(f"✅ after img_front shape: {img_front.shape}")

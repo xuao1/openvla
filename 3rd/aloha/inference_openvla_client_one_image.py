@@ -57,7 +57,7 @@ class OpenVLA:
         # Parse payload components
         instruction = payload["instruction"]
         image = payload["image"]
-        unnorm_key = payload.get("unnorm_key", "aloha2openvla_multi_rgb_flip_upright")
+        unnorm_key = payload.get("unnorm_key", "aloha2openvla_multi_rgb_lift")
 
         # Run VLA Inference
         response = requests.post(
@@ -162,9 +162,9 @@ def inference_process(args, ros_operator, t, openvla_model):
         # print(f"✅ after img_front shape: {img_front.shape}")
         # img_front = np.transpose(img_front, (2, 0, 1)).astype(np.uint8)
         img_front = img_front.astype(np.uint8)
-        # vis_image = PILImage.fromarray(img_front)
-        # vis_image.save(f"./debug_inference/frame_{t:05d}.png")
-        # img_left = np.transpose(img_left, (2, 0, 1)).astype(np.uint8)
+        vis_image = PILImage.fromarray(img_front)
+        vis_image.save(f"./debug_inference/frame_{t:05d}.png")
+        img_left = np.transpose(img_left, (2, 0, 1)).astype(np.uint8)
         # img_right = np.transpose(img_right, (2, 0, 1)).astype(np.uint8)
         # print(f"✅ after img_front shape: {img_front.shape}")
         # # 准备观察数据
@@ -238,7 +238,11 @@ def model_inference(args, ros_operator, save_episode=True):
     right0 = [-0.00133514404296875, 0.00438690185546875, 0.034523963928222656, -0.053597450256347656, -0.00476837158203125, -0.00209808349609375, 3.557830810546875]
     left1 = [-0.00133514404296875, 0.00209808349609375, 0.01583099365234375, -0.032616615295410156, -0.00286102294921875, 0.00095367431640625, -0.3393220901489258]
     # right1 = [-0.00133514404296875, 0.00247955322265625, 0.01583099365234375, -0.032616615295410156, -0.00286102294921875, 0.00095367431640625, -0.3397035598754883]
-    right1 = [0.0377837, 1.4326408, -1.1984551, 0.5086321, 0.89058596, -0.1972742, 0.0328]
+    # right1 = [0.0377837, 1.4326408, -1.1984551, 0.5086321, 0.89058596, -0.1972742, 0.0328]
+    # right0 = [0.013345,1.307759,-1.031568,0.635799,0.705871,-0.320917,0.039900]
+    # right1 = right0
+    right0 = [0.61528474, 1.2036185, -0.85777384, 0.0279104, 0.5239829, -0.0376616, 0.0179]
+    right1 = right0
 
     ros_operator.puppet_arm_publish_continuous(left0, right0)
     input("Enter any key to continue :")
@@ -669,7 +673,8 @@ def get_arguments():
     parser.add_argument('--action_chunk_size', action='store', type=int, help='action_chunk_size', default=16, required=False)
     parser.add_argument('--task_instruction', 
                        type=str,
-                       default="Searching through a cluttered box for the 'Innovation Dragon' doll, remove the obstructing items and place them on either side of the table, until the doll is retrieved and handed forward.",
+                       default = "lift the object",
+                       # default="Searching through a cluttered box for the 'Innovation Dragon' doll, remove the obstructing items and place them on either side of the table, until the doll is retrieved and handed forward.",
                        help='任务指令描述') #Grasp objects on the table and put them into the box.
     # Use the right arm to cut a small slice from the sausage. If the sausage is placed horizontally, cut from the left end; if it's placed vertically, cut from the bottom. If the sliced piece sticks to the knife, use the left arm to wipe it off. Then return the knife to the knife holder.
     # task61 Use the right arm to hold the knife and the left arm to press the knife tip, then cut a small slice of sausage; if the slice sticks to the knife, use the left arm to wipe it off, then put the knife back on the knife rack.

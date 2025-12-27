@@ -5,8 +5,8 @@ import numpy as np
 
 # 指向你生成数据的目录 (即 tfds build 命令中 --data_dir 指定的目录)
 # 也是包含 "aloha2openvla_multi_rgb" 文件夹的上级目录
-DATA_DIR = '/home/aox/model/aloha_rlds/' 
-DATASET_NAME = 'aloha2openvla_multi_rgb'
+DATA_DIR = '/data/aox/model/' 
+DATASET_NAME = 'aloha2openvla_multi_rgb_lift'
 
 def visualize_dataset():
     # 1. 加载数据集

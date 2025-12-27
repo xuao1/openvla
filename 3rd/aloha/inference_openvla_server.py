@@ -180,7 +180,7 @@ class OpenVLAServer:
 @dataclass
 class DeployConfig:
     # fmt: off
-    openvla_path: Union[str, Path] = "/home/aox/model/aloha_7b_flip_upright_one_image_full"              # HF Hub Path (or path to local run directory)
+    openvla_path: Union[str, Path] = "/home/agilex/xuao/model/aloha_7b_lift_one_image"              # HF Hub Path (or path to local run directory)
 
     # Server Configuration
     host: str = "127.0.1.1"                                                         # Host IP Address

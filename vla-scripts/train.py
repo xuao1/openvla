@@ -68,7 +68,7 @@ class TrainConfig:
     # Run Arguments
     run_id: Optional[str] = None                                    # Run ID for logging, Weights & Biases
     run_id_note: Optional[str] = None                               # Extra note for logging, Weights & Biases
-    save_interval: int = 2500                                       # Interval for saving checkpoints (in steps)
+    save_interval: int = 2000                                       # Interval for saving checkpoints (in steps)
     image_aug: bool = False                                         # Whether to enable image augmentations
     seed: int = 7                                                   # Random seed (for reproducibility)
 

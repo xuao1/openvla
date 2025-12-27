@@ -3,8 +3,8 @@ import numpy as np
 import tensorflow as tf
 
 # 指向你的数据根目录
-DATA_DIR = '/home/aox/model/aloha_rlds/' 
-DATASET_NAME = 'aloha2openvla_multi_rgb'
+DATA_DIR = '/data/aox/model/' 
+DATASET_NAME = 'aloha2openvla_multi_rgb_lift'
 
 print(f"Checking dataset: {DATASET_NAME} in {DATA_DIR}")
 
@@ -15,8 +15,8 @@ for episode in ds.take(1): # 只看第1个episode
     steps = list(episode['steps'].as_numpy_iterator())
     
     # 打印前5帧的状态数据
-    print("First 5 frames of 'state':")
-    for i in range(5):
+    print("First 50 frames of 'state':")
+    for i in range(50):
         state_val = steps[i]['observation']['state']
         print(f"Frame {i}: {state_val}")
         
